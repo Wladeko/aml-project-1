@@ -1,19 +1,22 @@
 import numpy as np
+from rich import print
+from rich.table import Table
 
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
-def logistic_regression_irls(X, y, interactions=None, tol=1e-6, max_iter=100, delta=1e-4):
+def logistic_regression_irls(X, y, interaction_pairs=None, tol=1e-6, max_iter=100, delta=1e-4):
     n, p = X.shape
+
     # Add a column of ones for the intercept
     X = np.hstack([np.ones((n, 1)), X])
 
     # Add interactions
-    if interactions is not None:
+    if interaction_pairs is not None:
         X_interact = []
-        for i, j in interactions:
+        for i, j in interaction_pairs:
             X_interact.append(X[:, i] * X[:, j])
         X_interact = np.array(X_interact).T
         X = np.hstack([X, X_interact])
@@ -37,7 +40,7 @@ def logistic_regression_irls(X, y, interactions=None, tol=1e-6, max_iter=100, de
         # Update the coefficients using Newton's method
         z = X @ w + np.linalg.inv(W) @ (y - p)
         w_new = H_inv @ X.T @ W @ z
-        5
+
         # Check for convergence
         if np.linalg.norm(w_new - w) < tol:
             break
@@ -47,35 +50,65 @@ def logistic_regression_irls(X, y, interactions=None, tol=1e-6, max_iter=100, de
     return w
 
 
-# Test
-# np.random.seed(123)
+def generate_artificial_data(num_samples, num_features, interaction_pairs):
+    # generate original feature matrix
+    X = np.random.normal(size=(num_samples, num_features))
 
-m = 2000
-n = 5
+    # generate interaction features
+    interaction_features = []
+    for i, j in interaction_pairs:
+        interaction_features.append(X[:, i] * X[:, j])
+    interaction_features = np.array(interaction_features).T
 
-X = np.random.normal(size=(m, n))
+    # concatenate original and interaction features
+    X_extended = np.hstack([np.ones((num_samples, 1)), X, interaction_features])
 
-interactions = [(1, 3), (2, 4)]
-X_interact = []
-for i, j in interactions:
-    X_interact.append(X[:, i] * X[:, j])
-X_interact = np.array(X_interact).T
-X_extendend = np.hstack([np.ones((m, 1)), X, X_interact])
+    # generate true weight vector
+    true_weights = np.random.normal(size=(num_features + 1 + len(interaction_pairs), 1))
 
-w_true = np.random.normal(size=(n + 1 + len(interactions), 1))  # include intercept and interactions
+    # generate target vector
+    logits = X_extended @ true_weights
+    probabilities = sigmoid(logits)
+    y = np.random.binomial(1, probabilities).reshape(-1, 1)
 
-# Generate the target vector y using logistic regression
-p = sigmoid(X_extendend @ w_true)
-y = np.random.binomial(1, p).reshape(-1, 1)
-
-w = logistic_regression_irls(X, y, interactions=interactions)
+    return X, X_extended, y, true_weights
 
 
-# check
-# Print the true and estimated coefficients
-print("True coefficients:\n", w_true)
-print("Estimated coefficients:\n", w)
+def main():
+    np.random.seed(123)
 
-# Compute the mean absolute error (MAE)
-mae = np.mean(np.abs(w - w_true))
-print("MAE:", mae)
+    # hyperparameters
+    num_samples = 2000
+    num_features = 5
+    interaction_pairs = [(1, 3), (2, 4)]
+
+    X, X_extended, y, w_true = generate_artificial_data(
+        num_samples=num_samples,
+        num_features=num_features,
+        interaction_pairs=interaction_pairs,
+    )
+
+    w = logistic_regression_irls(X, y, interaction_pairs=interaction_pairs)
+
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Coefficients")
+    table.add_column("True")
+    table.add_column("Estimated")
+    table.add_column("MAE", style="bold green")
+
+    for i in range(num_features):
+        table.add_row(
+            f"Feature {i+1}",
+            f"{float(w_true[i]):.3f}",
+            f"{float(w[i]):.3f}",
+            f"{float(abs(w[i] - w_true[i])):.3f}",
+        )
+
+    print(table)
+
+    mae = np.mean(np.abs(w - w_true))
+    print("Final MAE:", mae)
+
+
+if __name__ == "__main__":
+    main()
