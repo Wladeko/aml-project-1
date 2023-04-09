@@ -1,0 +1,5 @@
+autorootcwd
+rich
+numpy
+seaborn
+pandas
