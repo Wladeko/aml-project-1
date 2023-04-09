@@ -1,6 +1,9 @@
+import autorootcwd
 import numpy as np
 from rich import print
 from rich.table import Table
+
+from src.data import artificial
 
 
 def sigmoid(x):
@@ -50,30 +53,6 @@ def logistic_regression_irls(X, y, interaction_pairs=None, tol=1e-6, max_iter=10
     return w
 
 
-def generate_artificial_data(num_samples, num_features, interaction_pairs):
-    # generate original feature matrix
-    X = np.random.normal(size=(num_samples, num_features))
-
-    # generate interaction features
-    interaction_features = []
-    for i, j in interaction_pairs:
-        interaction_features.append(X[:, i] * X[:, j])
-    interaction_features = np.array(interaction_features).T
-
-    # concatenate original and interaction features
-    X_extended = np.hstack([np.ones((num_samples, 1)), X, interaction_features])
-
-    # generate true weight vector
-    true_weights = np.random.normal(size=(num_features + 1 + len(interaction_pairs), 1))
-
-    # generate target vector
-    logits = X_extended @ true_weights
-    probabilities = sigmoid(logits)
-    y = np.random.binomial(1, probabilities).reshape(-1, 1)
-
-    return X, X_extended, y, true_weights
-
-
 def main():
     np.random.seed(123)
 
@@ -82,13 +61,13 @@ def main():
     num_features = 5
     interaction_pairs = [(1, 3), (2, 4)]
 
-    X, X_extended, y, w_true = generate_artificial_data(
+    X, y, true_weights = artificial.generate_data(
         num_samples=num_samples,
         num_features=num_features,
         interaction_pairs=interaction_pairs,
     )
 
-    w = logistic_regression_irls(X, y, interaction_pairs=interaction_pairs)
+    weights = logistic_regression_irls(X, y, interaction_pairs=interaction_pairs)
 
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Coefficients")
@@ -99,14 +78,14 @@ def main():
     for i in range(num_features):
         table.add_row(
             f"Feature {i+1}",
-            f"{float(w_true[i]):.3f}",
-            f"{float(w[i]):.3f}",
-            f"{float(abs(w[i] - w_true[i])):.3f}",
+            f"{float(true_weights[i]):.3f}",
+            f"{float(weights[i]):.3f}",
+            f"{float(abs(weights[i] - true_weights[i])):.3f}",
         )
 
     print(table)
 
-    mae = np.mean(np.abs(w - w_true))
+    mae = np.mean(np.abs(weights - true_weights))
     print("Final MAE:", mae)
 
 
