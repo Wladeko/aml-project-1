@@ -1,4 +1,3 @@
-import autorootcwd
 import numpy as np
 from rich import print
 from rich.table import Table
@@ -10,7 +9,7 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
-def logistic_regression_irls(X, y, interaction_pairs=None, tol=1e-6, max_iter=100, delta=1e-4):
+def logistic_regression_irls(X, y, interaction_pairs=None, tol=1e-6, max_iter=100):
     n, p = X.shape
 
     # Add a column of ones for the intercept

@@ -1,5 +1,5 @@
-autorootcwd
-rich
-numpy
-seaborn
-pandas
+autorootcwd==1.0.0
+rich==12.6.0
+numpy==1.23.1
+seaborn==0.11.2
+pandas==1.5.0
