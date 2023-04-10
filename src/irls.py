@@ -10,18 +10,14 @@ def sigmoid(x):
 
 
 def logistic_regression_irls(X, y, interaction_pairs=None, tol=1e-6, max_iter=100):
-    n, p = X.shape
+    # generate interaction features
+    if interaction_pairs:
+        interaction_features = [X[:, i] * X[:, j] for i, j in interaction_pairs]
+        interaction_features = np.array(interaction_features).T
+        X = np.hstack([X, interaction_features])
 
     # Add a column of ones for the intercept
-    X = np.hstack([np.ones((n, 1)), X])
-
-    # Add interactions
-    if interaction_pairs is not None:
-        X_interact = []
-        for i, j in interaction_pairs:
-            X_interact.append(X[:, i] * X[:, j])
-        X_interact = np.array(X_interact).T
-        X = np.hstack([X, X_interact])
+    X = np.hstack([np.ones((X.shape[0], 1)), X])
 
     n, p = X.shape
 
