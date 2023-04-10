@@ -10,16 +10,20 @@ def generate_data(num_samples, num_features, interaction_pairs=None):
     X = np.random.normal(size=(num_samples, num_features))
 
     # generate interaction features
+    interaction_features = None
     if interaction_pairs:
         interaction_features = [X[:, i] * X[:, j] for i, j in interaction_pairs]
         interaction_features = np.array(interaction_features).T
-        X_extended = np.hstack([X, interaction_features])
 
     # concatenate original and interaction features
-    X_extended = np.hstack([np.ones((num_samples, 1)), X_extended])
+    if interaction_features:
+        X_extended = np.hstack([np.ones((num_samples, 1)), X, interaction_features])
+    else:
+        X_extended = np.hstack([np.ones((num_samples, 1)), X])
 
     # generate true weight vector
-    true_weights = np.random.normal(size=(1 + num_features + len(interaction_pairs), 1))
+    num_interaction_features = 0 if not interaction_pairs else len(interaction_pairs)
+    true_weights = np.random.normal(size=(1 + num_features + num_interaction_features, 1))
 
     # generate target vector
     logits = X_extended @ true_weights
