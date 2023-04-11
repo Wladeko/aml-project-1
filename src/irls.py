@@ -1,93 +1,109 @@
-import autorootcwd
 import numpy as np
-from rich import print
-from rich.table import Table
-
-from src.data import artificial
 
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
-def logistic_regression_irls(X, y, interaction_pairs=None, tol=1e-6, max_iter=100, delta=1e-4):
-    n, p = X.shape
+class IRLS:
+    def __init__(self, interaction_pairs=None, tol=1e-6, max_iter=100):
+        self.interaction_pairs = interaction_pairs
+        self.tol = tol
+        self.max_iter = max_iter
 
-    # Add a column of ones for the intercept
-    X = np.hstack([np.ones((n, 1)), X])
+    def fit(self, X, y):
+        # unravel
+        y = y.reshape(-1, 1)
 
-    # Add interactions
-    if interaction_pairs is not None:
-        X_interact = []
-        for i, j in interaction_pairs:
-            X_interact.append(X[:, i] * X[:, j])
-        X_interact = np.array(X_interact).T
-        X = np.hstack([X, X_interact])
+        # generate interaction features
+        if self.interaction_pairs:
+            interaction_features = [X[:, i] * X[:, j] for i, j in self.interaction_pairs]
+            interaction_features = np.array(interaction_features).T
+            X = np.hstack([X, interaction_features])
 
-    n, p = X.shape
+        # Add a column of ones for the intercept
+        X = np.hstack([np.ones((X.shape[0], 1)), X])
 
-    # Initialize the coefficients to zero
-    w = np.zeros((p, 1))
+        n, p = X.shape
 
-    for _ in range(max_iter):
-        # Compute the predicted probabilities
-        p = sigmoid(X @ w)
+        # Initialize the coefficients to zero
+        w = np.zeros((p, 1))
 
-        # Compute the diagonal weight matrix
-        W = np.diagflat(p * (1 - p))
+        for _ in range(self.max_iter):
+            # Compute the predicted probabilities
 
-        # Compute the Hessian
-        H = X.T @ W @ X
-        H_inv = np.linalg.inv(H)
+            p = sigmoid(X @ w)
 
-        # Update the coefficients using Newton's method
-        z = X @ w + np.linalg.inv(W) @ (y - p)
-        w_new = H_inv @ X.T @ W @ z
+            # Compute the diagonal weight matrix
+            W = np.diagflat(p * (1 - p))
 
-        # Check for convergence
-        if np.linalg.norm(w_new - w) < tol:
-            break
+            # Compute the Hessian
+            H = X.T @ W @ X
+            H_inv = np.linalg.inv(H)
 
-        w = w_new
+            # Update the coefficients using Newton's method
+            z = X @ w + np.linalg.inv(W) @ (y - p)
+            w_new = H_inv @ X.T @ W @ z
 
-    return w
+            # Check for convergence
+            if np.linalg.norm(w_new - w) < self.tol:
+                break
 
+            w = w_new
 
-def main():
-    np.random.seed(123)
+        self.coef_ = w
 
-    # hyperparameters
-    num_samples = 2000
-    num_features = 5
-    interaction_pairs = [(1, 3), (2, 4)]
+        return w
 
-    X, y, true_weights = artificial.generate_data(
-        num_samples=num_samples,
-        num_features=num_features,
-        interaction_pairs=interaction_pairs,
-    )
+    def predict(self, X):
+        # generate interaction features
+        if self.interaction_pairs:
+            interaction_features = [X[:, i] * X[:, j] for i, j in self.interaction_pairs]
+            interaction_features = np.array(interaction_features).T
+            X = np.hstack([X, interaction_features])
 
-    weights = logistic_regression_irls(X, y, interaction_pairs=interaction_pairs)
+        # Add a column of ones for the intercept
+        X = np.hstack([np.ones((X.shape[0], 1)), X])
 
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Coefficients")
-    table.add_column("True")
-    table.add_column("Estimated")
-    table.add_column("MAE", style="bold green")
+        # Predict using the coefficients
+        y_pred = sigmoid(X @ self.coef_)
 
-    for i in range(num_features):
-        table.add_row(
-            f"Feature {i+1}",
-            f"{float(true_weights[i]):.3f}",
-            f"{float(weights[i]):.3f}",
-            f"{float(abs(weights[i] - true_weights[i])):.3f}",
-        )
+        return y_pred
 
-    print(table)
+    # def logistic_regression_irls(X, y, interaction_pairs=None, tol=1e-6, max_iter=100):
+    #     # generate interaction features
+    #     if interaction_pairs:
+    #         interaction_features = [X[:, i] * X[:, j] for i, j in interaction_pairs]
+    #         interaction_features = np.array(interaction_features).T
+    #         X = np.hstack([X, interaction_features])
 
-    mae = np.mean(np.abs(weights - true_weights))
-    print("Final MAE:", mae)
+    #     # Add a column of ones for the intercept
+    #     X = np.hstack([np.ones((X.shape[0], 1)), X])
 
+    #     n, p = X.shape
 
-if __name__ == "__main__":
-    main()
+    #     # Initialize the coefficients to zero
+    #     w = np.zeros((p, 1))
+
+    #     for _ in range(max_iter):
+    #         # Compute the predicted probabilities
+    #         p = sigmoid(X @ w)
+
+    #         # Compute the diagonal weight matrix
+    #         W = np.diagflat(p * (1 - p))
+
+    #         # Compute the Hessian
+    #         H = X.T @ W @ X
+    #         H_inv = np.linalg.inv(H)
+
+    #         # Update the coefficients using Newton's method
+    #         z = X @ w + np.linalg.inv(W) @ (y - p)
+    #         w_new = H_inv @ X.T @ W @ z
+
+    #         # Check for convergence
+    #         if np.linalg.norm(w_new - w) < tol:
+    #             break
+
+    #         w = w_new
+
+    # return w

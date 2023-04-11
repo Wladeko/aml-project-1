@@ -49,4 +49,11 @@ def prepare_data():
     X = df.drop("target", axis=1)
     y = df["target"]
 
+    # To numpy float
+    X = X.to_numpy().astype(np.float32)
+    y = y.to_numpy().astype(np.int64)
+
+    # Ravel
+    y = y.ravel()
+
     return X, y
