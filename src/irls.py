@@ -1,8 +1,9 @@
 import numpy as np
+import pandas as pd
 
 
 def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+    return np.where(x >= 0, 1 / (1 + np.exp(-x)), np.exp(x) / (1 + np.exp(x)))
 
 
 class IRLS:
@@ -15,17 +16,23 @@ class IRLS:
         # unravel
         y = y.reshape(-1, 1)
 
+        print("X shape: ", X.shape)
+        print("X rank: ", np.linalg.matrix_rank(X))
+
+        # Add a column of ones for the intercept
+        X = np.hstack([np.ones((X.shape[0], 1)), X])
+
         # generate interaction features
         if self.interaction_pairs:
             interaction_features = [X[:, i] * X[:, j] for i, j in self.interaction_pairs]
             interaction_features = np.array(interaction_features).T
             X = np.hstack([X, interaction_features])
 
-        # Add a column of ones for the intercept
-        X = np.hstack([np.ones((X.shape[0], 1)), X])
-
         n, p = X.shape
-
+        print(n, p)
+        DF = pd.DataFrame(X)
+        DF.to_csv("X.csv")
+        
         # Initialize the coefficients to zero
         w = np.zeros((p, 1))
 
@@ -39,6 +46,14 @@ class IRLS:
 
             # Compute the Hessian
             H = X.T @ W @ X
+            print("W shape: ", W.shape)
+            print("W det: ", np.linalg.det(W))
+            print("W rank: ", np.linalg.matrix_rank(W))
+            print("X shape: ", X.shape)
+            print("X rank: ", np.linalg.matrix_rank(X))
+            print("H shape: ", H.shape)
+            print("H det: ", np.linalg.det(H))
+            print("H rank: ", np.linalg.matrix_rank(H))
             H_inv = np.linalg.inv(H)
 
             # Update the coefficients using Newton's method
