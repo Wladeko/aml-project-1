@@ -20,11 +20,11 @@ def prepare_data():
     df.drop(["PassengerId", "Name", "Ticket", "Cabin"], axis=1, inplace=True)
 
     # Remove collinear variables
-    # corr_matrix = df.corr().abs()
-    # upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
-    # to_drop = [column for column in upper.columns if any(upper[column] > 0.8)]
-    # df = df.drop(to_drop, axis=1)
-    # print("Dropped:", to_drop)
+    corr_matrix = df.corr().abs()
+    upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+    to_drop = [column for column in upper.columns if any(upper[column] > 0.5) and column != "Survived"]
+    df = df.drop(to_drop, axis=1)
+    print("Dropped:", to_drop)
 
     X = df.drop(["Survived"], axis=1)
     y = df["Survived"]
