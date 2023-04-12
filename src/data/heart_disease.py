@@ -39,9 +39,9 @@ def prepare_data():
     # Remove collinear variables
     corr_matrix = df.corr(numeric_only=False).abs()
     upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
-    to_drop = [column for column in upper.columns if any(upper[column] > 0.7)]
+    to_drop = [column for column in upper.columns if any(upper[column] > 0.5) and column != "target"]
     df.drop(to_drop, axis=1, inplace=True)
-    # print("Dropped colinear columns:", to_drop)
+    print("Dropped colinear columns:", to_drop)
 
     # Map target variable to binary labels
     df["target"] = df["target"].map({0: 0, 1: 1, 2: 1, 3: 1, 4: 1})
