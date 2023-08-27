@@ -36,7 +36,7 @@ Full project task is located in `resources` subdirectory.
 ```
 ---
 ## Results
-We presented obtained results in short [report](https://github.com/Wladeko/aml-project-1/blob/main/report.txt).
+We presented obtained results in short [report](https://github.com/Wladeko/aml-project-1/blob/main/report.pdf).
 
 ---
 ## Co-author
